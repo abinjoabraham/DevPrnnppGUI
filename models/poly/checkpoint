@@ -1,2 +1,0 @@
-model_checkpoint_path: "/ais/gobi5/davidj/cityscapes_project/newpolyrnn/model_dirs/metagraphs/meta_batch_1_disc1/polygonplusplus.ckpt"
-all_model_checkpoint_paths: "/ais/gobi5/davidj/cityscapes_project/newpolyrnn/model_dirs/metagraphs/meta_batch_1_disc1/polygonplusplus.ckpt"
