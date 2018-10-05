@@ -19,16 +19,10 @@ class InteractiveGUITest(QMainWindow):
         loadUi('InteractiveGUI3.ui',self)
         self.image = None
         self.pushButton.clicked.connect(self.loadClicked)
-        self.ProcessButton.clicked.connect(self.processImage)
-        self.PolyButton.clicked.connect(self.operateonimageClicked)
+        self.ProcessButton.clicked.connect(self.processImageClicked)
+        self.PolyButton.clicked.connect(self.getpolyClicked)
 
-    @pyqtSlot()
-    def operateonimageClicked(self):
-        gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY) if len(self.image.shape)>=3 else self.image
-        self.image = cv2.Canny(gray,100,200)
-        self.displayImage(window=2)
-
-    @pyqtSlot()
+    #@pyqtSlot()
     def loadClicked(self):
         fname,filter = QFileDialog.getOpenFileName(self,'Open File','/home/uib06040/polyrnn',"Image Files (*.png)") ## Image browser
         if fname:
@@ -36,8 +30,15 @@ class InteractiveGUITest(QMainWindow):
         else:
             print('Invalid Image')
             #self.loadImage('dusseldorf_000002_000019_leftImg8bit.png')
-    @pyqtSlot()
-    def processImage(self):     ## Image Cropping
+
+    #@pyqtSlot()
+    def getpolyClicked(self):
+        gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY) if len(self.image.shape)>=3 else self.image
+        self.image = cv2.Canny(gray,100,200)
+        self.displayImage(window=2)
+
+    #@pyqtSlot()
+    def processImageClicked(self):     ## Image Cropping
         fname, filter = QFileDialog.getSaveFileName(self,'Save File','/home/uib06040/polyrnn',"Image Files (*.png)")
         print("name of the file:",fname) ## While saving need to include the extension to avoid the Error
         ## url = fname ## '/path/eds/vs/accescontrol.dat/d=12520/file1.dat'
@@ -72,24 +73,25 @@ class InteractiveGUITest(QMainWindow):
             cropping = False
 
             # draw a rectangle around the region of interest
-            cv2.rectangle(image, ref_point[0], ref_point[1], (0, 255, 0), 1) ## Last argument is the line width
-            cv2.imshow("image", image)
+            cv2.rectangle(images, ref_point[0], ref_point[1], (0, 255, 0), 1) ## Last argument is the line width
+            cv2.imshow("images", images)
 
         # image1 = cv2.imread(self.image)
-        clone = self.image.copy()
-        cv2.namedWindow("image")
-        cv2.setMouseCallback("image", shape_selection)
+        images = self.image
+        clone = images.copy()
+        cv2.namedWindow("images")
+        cv2.setMouseCallback("images", shape_selection)
 
 
         # keep looping until the 'q' key is pressed
         while True:
           # display the image and wait for a keypress
-          cv2.imshow("image", image)
+          cv2.imshow("images", images)
           key = cv2.waitKey(1) & 0xFF
 
           # if the 'r' key is pressed, reset the cropping region
           if key == ord("r"):
-            image = clone.copy()
+            images = clone.copy()
 
           # if the 'c' key is pressed, break from the loop
           elif key == ord("c"):
@@ -98,9 +100,10 @@ class InteractiveGUITest(QMainWindow):
         # if there are two reference points, then crop the region of interest
         # from the image and display it
         if len(ref_point) == 2:
-          crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
-          cv2.imshow("crop_img", crop_img)
-          cv2.waitKey(0)
+            print("ref_point:", ref_point)
+            crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
+            cv2.imshow("crop_img", crop_img)
+            cv2.waitKey(0)
 
         # close all open windows
         cv2.destroyAllWindows()
