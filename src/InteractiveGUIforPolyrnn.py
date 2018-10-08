@@ -34,12 +34,16 @@ class InteractiveGUITest(QMainWindow):
 
     #@pyqtSlot()
     def getpolyClicked(self):
-        gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY) if len(self.image.shape)>=3 else self.image
-        self.image = cv2.Canny(gray,100,200)
-        self.displayImage(window=2)
+        self.cropped = cv2.imread("output/input.png")
+        dim = (791,371)
+        resized = cv2.resize(self.cropped, dim, interpolation = cv2.INTER_AREA)
+        self.cropped = resized.copy()
+        self.displayCroppedImage(window=2)
 
     #@pyqtSlot()
-    def processImageClicked(self):     ## Image Cropping
+    def processImageClicked(self):     ## Image Cropping:: need to use self.cropped over here.
+        cv2.imwrite("imgs/input.png", self.cropped)
+
         os.system("python src/inference.py \
             --PolyRNN_metagraph='../polyrnn/models/poly/polygonplusplus.ckpt.meta' \
             --PolyRNN_checkpoint='../polyrnn/models/poly/polygonplusplus.ckpt' \
@@ -49,8 +53,9 @@ class InteractiveGUITest(QMainWindow):
             --GGNN_metagraph='../polyrnn/models/ggnn/ggnn.ckpt.meta' \
             --OutputFolder='output/' \
             --Use_ggnn=True")
-
-
+        os.system("python src/vis_predictions.py \
+                -pred_dir='output/' \
+                --show_ggnn")
 
     def readImage(self,fname):
         self.image = cv2.imread(fname)
@@ -119,7 +124,7 @@ class InteractiveGUITest(QMainWindow):
         self.displayCroppedImage()
 
 
-    def displayCroppedImage(self, window=1):
+    def displayCroppedImage(self, window =1):
         qformat = QImage.Format_Indexed8
         if len(self.cropped.shape) == 3: # rows[0],cols[1],channels[2]
             if(self.cropped.shape[2]) == 4:
@@ -135,8 +140,8 @@ class InteractiveGUITest(QMainWindow):
             self.imglabel.setPixmap(QPixmap.fromImage(img))
             self.imglabel.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
         if window == 2:
-            self.imglabel2.setPixmap(QPixmap.fromImage(img))
-            self.imglabel2.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+            self.imglabel_2.setPixmap(QPixmap.fromImage(img))
+            self.imglabel_2.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
 
 #if __name__ == '__main__':
 

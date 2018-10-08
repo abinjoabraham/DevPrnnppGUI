@@ -76,7 +76,7 @@ def inference(_):
         allow_soft_placement=True
     ), graph=polyGraph)
 
-    model.saver.restore(polySess, FLAGS.PolyRNN_checkpoint)
+    model.saver.restore(polySess, FLAGS.PolyRNN_checkpoint) ## N/W loaded to PolySess
 
     if FLAGS.Use_ggnn:
         ggnnGraph = tf.Graph()
@@ -91,7 +91,6 @@ def inference(_):
     if not os.path.isdir(FLAGS.OutputFolder):
         tf.gfile.MakeDirs(FLAGS.OutputFolder)
     crops_path = glob.glob(os.path.join(FLAGS.InputFolder, '*.png'))    ## generate a list of all the input input_images
-
     for crop_path in tqdm.tqdm(crops_path):
         image_np = io.imread(crop_path)             ## Input image read here
         image_np = np.expand_dims(image_np, axis=0) ## Image flattened to 1D
