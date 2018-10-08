@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-python src/ImageCrop.py --image src/*.png
-sleep 3s
-cp crop_img_*.png imgs/
-convert imgs/crop_img*.png -resize 224x224\! imgs/crop_image_1.png
-mv imgs/crop_img*.png dmps/
-
 
 python src/inference.py \
     --PolyRNN_metagraph='../polyrnn/models/poly/polygonplusplus.ckpt.meta' \

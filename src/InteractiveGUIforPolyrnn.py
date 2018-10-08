@@ -16,17 +16,18 @@ cropping = False
 class InteractiveGUITest(QMainWindow):
     def __init__(self):
         super(InteractiveGUITest,self).__init__()
-        loadUi('InteractiveGUI3.ui',self)
+        loadUi('src/InteractiveGUI3.ui',self)
         self.image = None
+        self.cropped = None
         self.pushButton.clicked.connect(self.loadClicked)
-        self.ProcessButton.clicked.connect(self.processImageClicked)
+        self.ProcessButton.clicked.connect(self.processImageClicked)        ## Loading of the model have to be done here.
         self.PolyButton.clicked.connect(self.getpolyClicked)
 
     #@pyqtSlot()
     def loadClicked(self):
         fname,filter = QFileDialog.getOpenFileName(self,'Open File','/home/uib06040/polyrnn',"Image Files (*.png)") ## Image browser
         if fname:
-            self.loadImage(fname)
+            self.readImage(fname)
         else:
             print('Invalid Image')
             #self.loadImage('dusseldorf_000002_000019_leftImg8bit.png')
@@ -39,20 +40,21 @@ class InteractiveGUITest(QMainWindow):
 
     #@pyqtSlot()
     def processImageClicked(self):     ## Image Cropping
-        fname, filter = QFileDialog.getSaveFileName(self,'Save File','/home/uib06040/polyrnn',"Image Files (*.png)")
-        print("name of the file:",fname) ## While saving need to include the extension to avoid the Error
-        ## url = fname ## '/path/eds/vs/accescontrol.dat/d=12520/file1.dat'
-        ## [x for x in url.split('/') if x[-4:] == '.png']
+        os.system("python src/inference.py \
+            --PolyRNN_metagraph='../polyrnn/models/poly/polygonplusplus.ckpt.meta' \
+            --PolyRNN_checkpoint='../polyrnn/models/poly/polygonplusplus.ckpt' \
+            --EvalNet_checkpoint='../polyrnn/models/evalnet/evalnet.ckpt' \
+            --InputFolder='imgs/' \
+            --GGNN_checkpoint='../polyrnn/models/ggnn/ggnn.ckpt' \
+            --GGNN_metagraph='../polyrnn/models/ggnn/ggnn.ckpt.meta' \
+            --OutputFolder='output/' \
+            --Use_ggnn=True")
 
-        ## print('Name of the filename:', x)
-        if fname:
-            cv2.imwrite(fname, self.image)
-        else:
-            print('Error')
 
-    def loadImage(self,fname):
+
+    def readImage(self,fname):
         self.image = cv2.imread(fname)
-        self.displayImage()
+        #self.displayImage()
 
         def shape_selection(event, x, y, flags, param):
           # grab references to the global variables
@@ -77,7 +79,7 @@ class InteractiveGUITest(QMainWindow):
             cv2.imshow("images", images)
 
         # image1 = cv2.imread(self.image)
-        images = self.image
+        images = self.image # self.image = cv2.imread(fname)
         clone = images.copy()
         cv2.namedWindow("images")
         cv2.setMouseCallback("images", shape_selection)
@@ -104,20 +106,27 @@ class InteractiveGUITest(QMainWindow):
             crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
             cv2.imshow("crop_img", crop_img)
             cv2.waitKey(0)
+            self.cropped = crop_img.copy()
+            print("Shape of the cropped Image:",self.cropped.shape)
+            dim = (224,224)
+            resized = cv2.resize(self.cropped, dim, interpolation = cv2.INTER_AREA)
+            self.cropped = resized.copy()
+            print("Shape of the resized Image:",self.cropped.shape)
+
 
         # close all open windows
         cv2.destroyAllWindows()
+        self.displayCroppedImage()
 
 
-    def displayImage(self, window=1):
+    def displayCroppedImage(self, window=1):
         qformat = QImage.Format_Indexed8
-
-        if len(self.image.shape) == 3: # rows[0],cols[1],channels[2]
-            if(self.image.shape[2]) == 4:
+        if len(self.cropped.shape) == 3: # rows[0],cols[1],channels[2]
+            if(self.cropped.shape[2]) == 4:
                 qformat = QImage.Format_RGBA8888
             else:
                 qformat = QImage.Format_RGB888
-        img = QImage(self.image, self.image.shape[1],self.image.shape[0],self.image.strides[0],qformat)
+        img = QImage(self.cropped, self.cropped.shape[1],self.cropped.shape[0],self.cropped.strides[0],qformat)
 
     #BGR > RGB
 
@@ -128,6 +137,8 @@ class InteractiveGUITest(QMainWindow):
         if window == 2:
             self.imglabel2.setPixmap(QPixmap.fromImage(img))
             self.imglabel2.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+
+#if __name__ == '__main__':
 
 app=QApplication(sys.argv)
 window=InteractiveGUITest()

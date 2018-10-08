@@ -50,7 +50,7 @@ class InteractiveGUITest(QMainWindow):
                 qformat = QImage.Format_RGBA8888
             else:
                 qformat = QImage.Format_RGB888
-        img = QImage(self.image, self.image.shape[1],self.image.shape[0],self.image.strides[0],qformat)
+        img = QImage(self.image, self.image.shape[1], self.image.shape[0], self.image.strides[0], qformat)
 
     #BGR > RGB
 
