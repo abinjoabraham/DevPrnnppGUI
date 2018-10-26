@@ -146,21 +146,39 @@ class InteractiveGUITest(QMainWindow):
 
             show_ggnn = True
             preds_path = glob.glob(os.path.join(FLAGS.OutputFolder, '*.json'))
-            fig, axes = plt.subplots(1, 2 if show_ggnn else 1, num=0,figsize=(12,6))
+            fig, axes = plt.subplots(1, 1, num=0,figsize=(6,6)) #2 if show_ggnn else 1
             axes = np.array(axes).flatten()
+            print('axes:', axes)
             for pred_path in tqdm.tqdm(preds_path):
                 pred = json.load(open(pred_path, 'r'))
-                file_name = pred_path.split('/')[-1].split('.')[0]
+                file_name = pred_path.split('/')[-1].split('.')[0] # check the output file name from the pred_path
+                print('File name ::', file_name)
 
                 im_crop, polys = io.imread(pred['img_source']), np.array(pred['polys'])  ## pred['polys'] contains the polygons
+                print('axes0:', axes[0])
+                #print('axes1:', axes[1])
                 vis_polys(axes[0], im_crop, polys, title='PolygonRNN++ : %s ' % file_name)
-                if show_ggnn:
-                    vis_polys(axes[1], im_crop, np.array(pred['polys_ggnn']), title=' PolygonRNN++ + GGNN : %s' % file_name)
-
                 fig_name = os.path.join(FLAGS.OutputFolder, file_name) + '.png'
                 fig.savefig(fig_name)
 
                 [ax.cla() for ax in axes]
+            fig, axes = plt.subplots(1, 1, num=1,figsize=(6,6))
+            axes = np.array(axes).flatten()
+            print('axes:', axes)
+            for pred_path in tqdm.tqdm(preds_path):
+                pred = json.load(open(pred_path, 'r'))
+                file_name = pred_path.split('/')[-1].split('.')[0] # check the output file name from the pred_path
+                print('File name ::', file_name)
+
+                im_crop, polys = io.imread(pred['img_source']), np.array(pred['polys'])  ## pred['polys'] contains the polygons
+                print('axes0:', axes[0])
+                #print('axes1:', axes[1])
+                vis_polys(axes[0], im_crop, np.array(pred['polys_ggnn']), title=' PolygonRNN++ + GGNN : %s' % file_name)
+                fig_name = os.path.join(FLAGS.OutputFolder, file_name) + 'GGNN.png'
+                fig.savefig(fig_name)
+
+                [ax.cla() for ax in axes]
+
 
     def loadClicked(self):
             fname,filter = QFileDialog.getOpenFileName(self,'Open File','/home/uib06040/polyrnn',"Image Files (*.png)") ## Image browser
@@ -173,9 +191,12 @@ class InteractiveGUITest(QMainWindow):
     #@pyqtSlot()
     def getpolyClicked(self):
             self.cropped = cv2.imread("output/input.png")
-            dim = (791,371)
+            self.croppedGGNN = cv2.imread("output/inputGGNN.png")
+            dim = (371,371)
             resized = cv2.resize(self.cropped, dim, interpolation = cv2.INTER_AREA)
             self.cropped = resized.copy()
+            resized = cv2.resize(self.croppedGGNN, dim, interpolation = cv2.INTER_AREA)
+            self.croppedGGNN = resized.copy()
             self.displayCroppedImage(window=2)
 
     #@pyqtSlot()
@@ -233,7 +254,8 @@ class InteractiveGUITest(QMainWindow):
              cv2.imshow("crop_img", crop_img)
              cv2.waitKey(0)
              self.cropped = crop_img.copy()
-             print("Shape of the cropped Image:",self.cropped.shape)
+             self.dimcropped = self.cropped.shape
+             print("Shape of the cropped Image:",self.dimcropped[0:2])
              dim = (224,224)
              resized = cv2.resize(self.cropped, dim, interpolation = cv2.INTER_AREA)
              self.cropped = resized.copy()
@@ -255,14 +277,35 @@ class InteractiveGUITest(QMainWindow):
             img = QImage(self.cropped, self.cropped.shape[1],self.cropped.shape[0],self.cropped.strides[0],qformat)
 
             #BGR > RGB
-
             img = img.rgbSwapped()
             if window == 1:
                 self.imglabel.setPixmap(QPixmap.fromImage(img))
                 self.imglabel.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
             if window == 2:
+                qformat2 = QImage.Format_Indexed8
+                if len(self.croppedGGNN.shape) == 3: # rows[0],cols[1],channels[2]
+                    if(self.croppedGGNN.shape[2]) == 4:
+                        qformat2 = QImage.Format_RGBA8888
+                    else:
+                        qformat2 = QImage.Format_RGB888
                 self.imglabel_2.setPixmap(QPixmap.fromImage(img))
                 self.imglabel_2.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+                img2 = QImage(self.croppedGGNN, self.croppedGGNN.shape[1],self.croppedGGNN.shape[0],self.croppedGGNN.strides[0],qformat2)
+                img2 = img2.rgbSwapped()
+                #x,y = self.croppedGGNN.shape[0], self.croppedGGNN.shape[1]
+                imcrop = self.croppedGGNN
+                cv2.imshow("chck1", imcrop)
+                cv2.waitKey(0)
+                imcrop = imcrop[57:332 , 45:329] # 48,0 0,329
+                cv2.imshow("chck", imcrop)
+                cv2.waitKey(0)
+                resized = cv2.resize(imcrop, (self.dimcropped[1],self.dimcropped[0]), interpolation = cv2.INTER_AREA)
+                x_offset, y_offset, x_offset1, y_offset1 = ref_point[0][0], ref_point[0][1], ref_point[1][0], ref_point[1][1]
+                print("X and Y offset:",x_offset, y_offset)
+                self.image[y_offset:y_offset1, x_offset:x_offset1] = resized
+                cv2.imwrite("overlay/input.png", self.image)
+                self.imglabel_3.setPixmap(QPixmap.fromImage(img2))
+                self.imglabel_3.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
 
 if __name__ == '__main__':
     app=QApplication(sys.argv)
