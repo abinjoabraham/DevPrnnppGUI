@@ -29,6 +29,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from poly_utils import vis_polys
 
+import pdb
+
 ref_point = []
 cropping = False
 
@@ -250,7 +252,9 @@ class InteractiveGUITest(QMainWindow):
          # from the image and display it
          if len(ref_point) == 2:
              print("ref_point:", ref_point)
+
              crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
+
              cv2.imshow("crop_img", crop_img)
              cv2.waitKey(0)
              self.cropped = crop_img.copy()
@@ -292,17 +296,16 @@ class InteractiveGUITest(QMainWindow):
                 self.imglabel_2.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
                 img2 = QImage(self.croppedGGNN, self.croppedGGNN.shape[1],self.croppedGGNN.shape[0],self.croppedGGNN.strides[0],qformat2)
                 img2 = img2.rgbSwapped()
-                #x,y = self.croppedGGNN.shape[0], self.croppedGGNN.shape[1]
-                imcrop = self.croppedGGNN
-                cv2.imshow("chck1", imcrop)
-                cv2.waitKey(0)
-                imcrop = imcrop[57:332 , 45:329] # 48,0 0,329
-                cv2.imshow("chck", imcrop)
-                cv2.waitKey(0)
-                resized = cv2.resize(imcrop, (self.dimcropped[1],self.dimcropped[0]), interpolation = cv2.INTER_AREA)
-                x_offset, y_offset, x_offset1, y_offset1 = ref_point[0][0], ref_point[0][1], ref_point[1][0], ref_point[1][1]
-                print("X and Y offset:",x_offset, y_offset)
-                self.image[y_offset:y_offset1, x_offset:x_offset1] = resized
+                x,y = self.croppedGGNN.shape[0], self.croppedGGNN.shape[1]
+                print("X and Y :",self.croppedGGNN.shape)
+                imcrop = self.croppedGGNN[45:329,48+2:332]
+                #cv2.imshow("chck1", imcrop)
+                #cv2.waitKey(0)
+                #imcrop = imcrop[48:332,45:329] # 48,332 45,329
+                resized = cv2.resize(imcrop, (self.dimcropped[1]-2,self.dimcropped[0]-2), interpolation = cv2.INTER_AREA)
+                y_offset, x_offset, y_offset1,  x_offset1 = ref_point[0][0]+2,ref_point[0][1]+2, ref_point[1][0], ref_point[1][1]
+                print("X and Y offset:",x_offset, y_offset, x_offset1, y_offset1 )
+                self.image[x_offset:x_offset1, y_offset:y_offset1 ] = resized
                 cv2.imwrite("overlay/input.png", self.image)
                 self.imglabel_3.setPixmap(QPixmap.fromImage(img2))
                 self.imglabel_3.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)

@@ -128,7 +128,7 @@ class PolygonInteractor(object):
                         axis=0)
                     self.line.set_data(zip(*self.poly.xy))
                     break
-        
+            
         if self.line.stale:
             self.canvas.draw_idle()
 
